@@ -7,6 +7,35 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 控制按钮 -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <Button Content="1. 初始化SDK" Click="BtnInit_Click" Width="100" Margin="5"/>
+            <Button Content="2. 查询设备" Click="BtnQuery_Click" Width="100" Margin="5"/>
+            <ComboBox x:Name="CmbDevices" Width="150" Margin="5"/>
+            <Button Content="3. 连接" Click="BtnConnect_Click" Width="100" Margin="5"/>
+            <Button Content="4. 获取信息" Click="BtnInfo_Click" Width="100" Margin="5"/>
+            <Button Content="5. 保存图像" Click="BtnSave_Click" Width="100" Margin="5"/>
+        </StackPanel>
+
+        <!-- 日志输出 -->
+        <TextBox Grid.Row="1" x:Name="TxtLog" 
+                 IsReadOnly="True" 
+                 VerticalScrollBarVisibility="Auto"
+                 TextWrapping="Wrap"
+                 Margin="10"/>
+
+        <!-- 状态栏 -->
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock x:Name="TxtStatus" Text="就绪"/>
+            </StatusBarItem>
+        </StatusBar>
 
     </Grid>
 </Window>
