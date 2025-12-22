@@ -1,4 +1,6 @@
 ﻿using IRCamera.Hardware;
+using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,6 +11,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Drawing.Imaging;
+using System.Drawing;
 
 namespace IRCamera.Desktop;
 
@@ -23,8 +27,78 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _camera = new IrCameraSdkWrapper();
-        Closed += (s, e) => _camera?.Dispose();
+
+        // 订阅图片更新事件
+        _camera.NewFrameReceived += OnNewFrameReceived;
+
+        Closed += (s, e) =>
+        {
+            _camera?.Dispose();
+            _camera.NewFrameReceived -= OnNewFrameReceived;
+        };
     }
+
+    // 处理图片更新
+    private void OnNewFrameReceived(Bitmap bitmap)
+    {
+        // 确保在 UI 线程上更新
+        Dispatcher.Invoke(() =>
+        {
+            try
+            {
+                // 将 Bitmap 转换为 BitmapSource
+                BitmapSource bitmapSource = ConvertBitmapToBitmapSource(bitmap);
+                // 将 System.Drawing.Bitmap 转换为 BitmapImage
+                this.CameraImage.Source = bitmapSource;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"更新图片失败: {ex.Message}");
+            }
+            finally
+            {
+                // 释放 Bitmap 资源
+                bitmap?.Dispose();
+            }
+        });
+    }
+
+    private BitmapSource ConvertBitmapToBitmapSource(Bitmap bitmap)
+    {
+        using (MemoryStream ms = new MemoryStream())
+        {
+            bitmap.Save(ms, ImageFormat.Png);
+            ms.Position = 0;
+            BitmapImage bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.StreamSource = ms;
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.EndInit();
+            return bitmapImage;
+        }
+    }
+
+    // Bitmap 转换方法
+    private BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
+    {
+        if (bitmap == null) return null;
+
+        using (var memory = new System.IO.MemoryStream())
+        {
+            bitmap.Save(memory, ImageFormat.Bmp);
+            memory.Position = 0;
+
+            var bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.StreamSource = memory;
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.EndInit();
+            bitmapImage.Freeze(); // 冻结对象，使其可以跨线程访问
+
+            return bitmapImage;
+        }
+    }
+
 
     private void Log(string message)
     {
@@ -143,5 +217,10 @@ public partial class MainWindow : Window
         {
             Log($"❌ 异常: {ex.Message}");
         }
+    }
+
+    private void Button_Click(object sender, RoutedEventArgs e)
+    {
+        _camera.Stop();
     }
 }

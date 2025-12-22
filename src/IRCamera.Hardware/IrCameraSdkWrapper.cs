@@ -35,6 +35,9 @@ public class IrCameraSdkWrapper : IDisposable
     public const int HEADER_SIZE = 32;
     #endregion
 
+    // 定义事件，用于传递新帧的 Bitmap
+    public event Action<Bitmap> NewFrameReceived;
+
     #region 私有字段
     private readonly object _frameLock = new object();
     private bool _isConnected = false;
@@ -288,6 +291,11 @@ public class IrCameraSdkWrapper : IDisposable
             Debug.WriteLine($"连接设备失败: {ex.Message}");
             return false;
         }
+    }
+
+    public void Stop()
+    {
+        IRSDK.IRSDK_Stop(0);
     }
 
     /// <summary>
@@ -584,14 +592,15 @@ public class IrCameraSdkWrapper : IDisposable
     {
         try
         {
+            Bitmap image2 = null;
+
             lock (_frameLock)  // 添加锁保护
             {
-                input_data = hFrame;
+                input_data = (IntPtr)hFrame;
                 Marshal.Copy(input_data, head_data, 0, headSize + tempSize);
-
                 pFrame = BytesToStruct<IRSDK.Frame>(head_data);
-                Marshal.StructureToPtr(pFrame, input_data_copy, false);
 
+                Marshal.StructureToPtr(pFrame, input_data_copy, false);
                 IRSDK.IRSDK_Frame2Gray(input_data_copy, garyDataPtr,
                     (float)u8Constrast, (float)u8Bright, 0);
 
@@ -600,7 +609,12 @@ public class IrCameraSdkWrapper : IDisposable
 
                 IRSDK.IRSDK_Rgb2Bmp(bmpDataPtr, bmpLenPtr, rgbDataPtr,
                     pFrame.width, pFrame.height);
+
+                image2 = BytesToBitmap(bmpData);
             }
+
+            // 触发事件，传递 image2
+            NewFrameReceived?.Invoke(image2);
 
             return 1;
         }

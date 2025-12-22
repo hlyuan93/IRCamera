@@ -10,6 +10,11 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
+	  <PackageReference Include="System.Drawing.Primitives" Version="4.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\IRCamera.Hardware\IRCamera.Hardware.csproj" />
 	</ItemGroup>
 
